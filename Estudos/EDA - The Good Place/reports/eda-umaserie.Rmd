@@ -1,0 +1,81 @@
+---
+title: "EDA The GoodPlace/ O Bom Lugar"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(here)
+theme_set(theme_bw())
+```
+
+## Objetivo
+
+Explorar as avaliações dos episódios da série Stranger Things. Houve duas temporadas: quais foram os melhores episódios? A melhor temporada?
+
+Ler os dados:
+
+```{r}
+all_series = read_csv(here("data/series_from_imdb.csv.zip"), 
+                      col_types = "ccdcdcdddddddddddd") 
+
+glimpse(all_series)
+
+episodes = all_series %>% 
+    filter(series_name == "O Bom Lugar") 
+
+glimpse(episodes)
+```
+#Vamos entender a correlação entre da avaliação das temporada
+```{r}
+    episodes %>%
+    mutate(season = as.character(season)) %>%
+    ggplot(mapping = aes(x = season, y = UserRating)) + 
+    geom_point()
+```
+
+
+A partir dos pontos, peebemos que a 1 temporada de The Good Place, possui a maior nota, enquanto a 3 temporada possui a menor nota.
+
+# Quantas avaliações temos por temporada?
+```{r}
+    episodes %>%
+    ggplot(aes(x = season, y = UserVotes)) +
+    geom_point()
+```
+Percebemos que as avaliações da 1 temporada são as maiores, e da 3 menores.
+
+
+###Quantas avaliacoes por episodio?
+```{r}
+    episodes %>%
+        filter(season == 1) %>%
+        ggplot(aes(x = season_ep, y = UserVotes)) +
+        geom_point()
+    episodes %>%
+        filter(season == 2) %>%
+        ggplot(aes(x = season_ep, y = UserVotes)) +
+        geom_point()
+    
+    episodes %>%
+        filter(season == 3) %>%
+        ggplot(aes(x = season_ep, y = UserVotes)) +
+        geom_point()
+    
+```
+Percebemos atraves dos gráficos que a permanencia da diferença  avaliações entre a 1 e a 3 temporada.
+
+### Qual é o episodio melhor avaliado
+```{r}
+    episodes %>%
+        
+        filter(UserRating == max(UserRating))
+```
+O episodio 13, Michaels Gambit, da 1 temporada é o episodio mais bem avaliado.
