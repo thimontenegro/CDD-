@@ -13,39 +13,124 @@ output:
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(here)
+library(ggbeeswarm)
 theme_set(theme_bw())
 ```
 
-Analisaremos os episódios da falecida série Sense8. 
+Analisaremos os episódios série Anos íncriveis. 
 
 Houve duas temporadas: quais foram os melhores episódios? A melhor temporada?
 
 ```{r}
-all_series = read_csv(here("data/series_from_imdb.csv"), 
-                    col_types = cols(.default = col_double(), 
-                                     series_name = col_character(), 
-                                     episode = col_character(), 
-                                     url = col_character(),
-                                     season = col_character())) 
+all_series = read_csv(here("data/series_from_imdb.csv.zip"), 
+                      col_types = "ccdcdcdddddddddddd") 
+                
 
 episodes = all_series %>% 
-    filter(series_name == "Sense8") 
+    filter(series_name == "Como Eu Conheci Sua Mãe") 
+#SELECT * FROM all_series WHERE series_name = 'Como Eu conheci Sua Mãe'
+
+glimpse(episodes)
+```
+#
+```{r}
+    episodes %>% 
+        ggplot(mapping = aes(x = series_name, y = UserRating)) +
+       # geom_jitter(width = .1, alpha = 0.5) +
+        geom_quasirandom(width = .1) #quase aleatoria
 ```
 
+#histograma de notas
+```{r}
+    episodes %>%
+        ggplot(mapping = aes(x = UserRating)) +
+        geom_histogram(binwidth = .5) +
+        geom_rug()
+
+    episodes %>%
+        ggplot(mapping = aes( x = UserRating, stat(density))) +
+        geom_histogram(binwidth = 1) 
+   
+     episodes %>%
+        ggplot(mapping = aes(x= UserRating)) +
+        geom_density()
+```
+###Olhando temporada por temporada
+
+```{r}
+episodes %>%
+        ggplot(aes(x = season, y= UserRating)) +
+        geom_quasirandom(width = .2)
+```
+###Avaliando Medidas de Posição = Média/Mediana
+###Dispersao/Concentracao = variancia -> Sum(((Xi - X')²)/n)
+#sqrt(desvio padrao) 
+#Amplitude interquartil = amplitude entre os 1 - 3 quartil
+#25 - 75% dos dados
+
+```{r}
+episodes %>%
+        ggplot(aes(x = season, y= UserRating)) +
+        geom_quasirandom(width = .2, alpha = .10) +
+        stat_summary(fun.y ='mean', geom='point', color = 'red') +
+        stat_summary(fun.y = 'median', geom='point', color = 'blue')
+
+```
+#boxplot
+```{r}
+    episodes %>%
+        ggplot(aes(x = season, y = UserRating, group_by(season))) +
+        geom_boxplot(outlier.colour = NA, coef = 0) +
+        geom_quasirandom(width = .2, alpha = .1)
+    
+    episodes %>%
+        ggplot(aes(x=season, y = UserRating, group = season)) +
+        geom_boxplot(outlier.colour = NA) +
+        geom_jitter(alpha = .4, color = 'orange')
+    
+```
+
+## Relação entre os episodios e os votos por episodio
+```{r}
+    episodes %>%
+    ggplot(mapping = aes(x = season_ep, y = UserVotes, color = UserRating)) +
+    geom_point()
+    
+    episodes %>%
+        ggplot(m)
+```
+```{r}
+    episodes %>%
+    ggplot(mapping = aes(x = season)) +
+    geom_histogram() +
+    facet_wrap(~ season_ep)
+```
+### O que houve no episodio 15?
+```{r}
+episodes %>% 
+    mutate(season = as.character(season)) %>%
+    ggplot(mapping = aes(x = series_ep, y = UserVotes, color = season)) +
+    geom_line()
+
+episodes %>% 
+    mutate(season = as.character(season)) %>%
+    ggplot(mapping = aes(x = UserRating)) +
+    geom_histogram(breaks = c(6,7,8,9,10),bins = 4, color = 'black', fill = 'yellow')
+```
 ## Quantas avaliações temos por episódio? 
 
 Cada episódio foi avaliado por um número diferente de usuários do IMDB. Vejamos como é essa distribuição. 
 
 ```{r}
 episodes %>% 
-    ggplot(aes(x = season, y = UserVotes)) +
+    ggplot(aes(x = season, y = user_votes)) +
     geom_jitter(width = .07) 
 ```
 
 
 ```{r}
 episodes %>% 
-    ggplot(aes(x = season_ep, y = UserVotes))  + 
+    ggplot(aes(x = season_ep, y = user_votes))  + 
     geom_line() + 
     facet_wrap(~ season)
                
@@ -57,7 +142,7 @@ A quantidade de avaliações varia bastante. Exceto pelo primeiro episódio, os 
 
 ```{r}
 episodes %>% 
-    ggplot(aes(x = "Sense8", y = UserRating)) + 
+    ggplot(aes(x = "Sense8", y = user_rating)) + 
     geom_jitter(width = .05) +
     ylim(5, 10) + 
     labs(x = "Episódios", y = "Avaliação no IMDB")
@@ -65,7 +150,7 @@ episodes %>%
 
 ```{r}
 episodes %>% 
-    ggplot(aes(x = UserRating)) + 
+    ggplot(aes(x = user_rating)) + 
     geom_histogram(binwidth = .5, fill = "pink", color = "black") + 
     geom_rug(alpha = .5, size = 1.2)
 
@@ -73,11 +158,11 @@ episodes %>%
 
 ```{r}
 sumarios = episodes %>% 
-    summarise(mediana = median(UserRating), 
-              media = mean(UserRating))
+    summarise(mediana = median(user_rating), 
+              media = mean(user_rating))
 
 episodes %>% 
-    ggplot(aes(x = UserRating)) + 
+    ggplot(aes(x = user_rating)) + 
     geom_histogram(binwidth = .5, fill = "white", color = "black") + 
     geom_vline(xintercept = sumarios$media, color = "darkorange") + 
     geom_vline(xintercept = sumarios$mediana, color = "brown") 
@@ -87,7 +172,7 @@ episodes %>%
 
 ```{r}
 episodes %>% 
-    filter(UserRating == min(UserRating))
+    filter(user_rating == min(user_rating))
 ```
 
 
@@ -95,7 +180,7 @@ episodes %>%
 
 ```{r}
 episodes %>% 
-    ggplot(aes(x = season, y = UserRating)) + 
+    ggplot(aes(x = season, y = user_rating)) + 
     geom_boxplot(width = .5, outlier.color = NA) +   
     geom_jitter(width = .1, size = 2, alpha = .5, color = "red")
 ```
@@ -105,7 +190,7 @@ episodes %>%
 
 ```{r}
 episodes %>% 
-  ggplot(aes(x = season_ep, y = UserRating, color = season)) + 
+  ggplot(aes(x = season_ep, y = user_rating, color = season)) + 
   geom_line() + 
   geom_point() 
 ```
