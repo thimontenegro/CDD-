@@ -22,12 +22,72 @@ glimpse(climas)
 ```
 
 ## Temperatura
+```{r}
+climas %>%
+    ggplot(aes(x = cidade, y = tmax, color = cidade)) +
+    geom_quasirandom() +
+    ggtitle('Temperatura máxima na cidade de Campina Grande e João Pessoa') +
+    facet_wrap(~ cidade)
 
+climas %>%
+        ggplot(aes(x = cidade, y= tmedia, color = cidade)) +
+        geom_quasirandom() +
+        ggtitle('Temperatura média na cidade de Campina Grande e João Pessoa') +
+        facet_wrap(~ cidade)
+climas %>%
+    ggplot(aes(x = cidade, y= tmin, color = cidade)) +
+    geom_quasirandom() +
+    ggtitle('Temperatura minima na cidade de Campina Grande e João Pessoa') +
+    facet_wrap(~ cidade)
+
+```
 ### Onde é mais quente?
+```{r}
+   climas %>%
+        ggplot(aes(x = cidade, y = tmedia, color = cidade)) +
+        geom_quasirandom(alpha = .3) +
+        facet_wrap(~ cidade) +
+    
+climas %>%
+        ggplot(aes(x = cidade, y = tmedia, color = cidade)) +
+        geom_jitter(alpha = .4)
 
+climas %>%
+    ggplot(aes(x = tmedia, color = cidade, fill = cidade)) +
+    geom_density(alpha = .3)
 
+climas %>%
+    ggplot(aes(x = cidade, y = tmedia, color = cidade)) +
+    geom_boxplot(coef = 1000, position = position_nudge(.3), widht = .1) +
+    geom_jitter(width = .5, alpha = .2, size = .5)
+```
+#Quais os meses mais quentes
+```{r}
+    climas %>%
+        ggplot(aes(x = mes, y = tmedia,group = mes,color = cidade)) +
+        geom_jitter(width = .1, alpha = .2) +
+        geom_boxplot()
+
+ climas %>%
+       filter(cidade == 'Campina Grande') %>%
+        ggplot(aes(x = mes, y = tmedia,group = mes,color = cidade)) +
+        geom_boxplot() +
+        geom_jitter(width = .1, alpha = .2) +
+        scale_x_continuous(breaks = 1:12) 
+```
 ### As temperaturas máximas semanais (o pico do calor) são tão diferentes quanto as médias? Mais?  
-
+```{r}
+    climas %>%
+        select(cidade,semana,tmedia,tmax) %>%
+        ##filter(cidade == 'Campina Grande') %>%
+        ggplot(aes(x = (tmedia), y = tmax, color = semana)) +
+        geom_boxplot() +
+        summarise_all(tmedia = mean(tmedia))
+    
+    climas %>%
+        ggplot(x = cidade, y = tmax, color = cidade)
+        
+```
 
 ### Quais os meses mais quentes e mais frios? 
 
@@ -37,6 +97,9 @@ glimpse(climas)
 
 
 ## Chuva
+```{r}
+    
+```
 
 ### Quanto chove por semana em JP e CG?
 
