@@ -1,0 +1,86 @@
+---
+title: "Temperatura JP x CG"
+output:
+    html_document:
+    df_print: paged
+theme: sandstone
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(lubridate)
+library(ggbeeswarm)
+theme_set(theme_bw())
+```
+
+```{r read}
+climas = read_csv(here::here("data/clima_cg_jp-semanal.csv"), 
+                  col_types = "cTdddddd")
+
+glimpse(climas)
+```
+
+## Temperatura
+```{r}
+climas %>%
+    ggplot(aes(x = cidade, y = tmedia, color = cidade)) +
+    geom_jitter(alpha = .4) +
+    ggtitle('Temperaturas nas cidade de CG E JP') +
+    xlab('Cidade') +
+    ylab('Temperatura Média')
+```
+
+### Onde é mais quente?
+```{r}
+
+climas %>%
+    ggplot(aes(x = tmedia, color = cidade, fill = cidade)) +
+    geom_density(alpha = .3) +
+    ggtitle("Onde é mais quente?") +
+    xlab('Temperatura Média') +
+    ylab('Densidade')
+```
+
+Através das analises de temperatura média pelo gráfico percemos que 
+a cidade De Campina Grande, possui as temperaturas médias mais elevadas.
+Mas como podemos entender melhor esse gráfico?
+```{r}
+    climas %>%
+        ggplot(aes(x = ano, y = tmedia,color = cidade))+
+        geom_jitter(width = .1, alpha = .2) +
+        facet_wrap(~ cidade)
+```
+Percebemos que campina nesse grafico pelos anos que  a temperatura média de João Pessoa é mais levada que a de Campina Grande
+### As temperaturas máximas semanais (o pico do calor) são tão diferentes quanto as médias? Mais?  
+
+
+### Quais os meses mais quentes e mais frios? 
+```{r}
+    climas %>%
+        ggplot(aes(x = mes, y = tmax,group = mes,color = cidade)) +
+        geom_boxplot() +
+        geom_jitter(width = .1, alpha = .2) +
+        scale_x_continuous(breaks = 1:12) 
+
+    climas %>%
+        ggplot(aes(x = mes, y = tmedia, group = mes, color = cidade))+
+        geom_jitter(width = .1, alpha = .4) +
+        scale_x_continuous(breaks = 1:12) +
+        facet_grid(~ cidade)
+```
+Os meses mais quentes são para a cidade de Campina Grande e João Pessoa, os meses de Fevereiro e Março, e os meses mais frios de Julho e Agosto.
+### Qual foi o São João  mais frio de CG que está nos nossos dados?
+
+
+
+## Chuva
+
+### Quanto chove por semana em JP e CG?
+
+Como é a distribuição do volume de chuvas por semana em JP e CG? A chuva varia mais ou menos que a temperatura? O formato da distribuição é igual? 
+
+### No geral, onde chove mais?
+
+### A distribuição é diferente em meses específicos? 
+
