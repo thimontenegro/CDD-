@@ -1,0 +1,96 @@
+---
+title: "Comentários e cultura"
+output:
+    html_document:
+    df_print: paged
+theme: sandstone
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(viridis)
+source(here::here("code/import_data.R"))
+theme_set(theme_bw())
+
+knitr::opts_chunk$set(tidy = FALSE,
+                      fig.width = 6,
+                      fig.height = 5)
+options(scipen = 999)
+```
+
+```{r read}
+dados = read_csv(
+    here::here("data/participation-per-country.csv"),
+    col_types = cols(
+        .default = col_double(),
+        site = col_character(),
+        country = col_character(),
+        geo = col_character(),
+        four_regions = col_character(),
+        eight_regions = col_character(),
+        six_regions = col_character(),
+        `World bank income group 2017` = col_character()
+    )
+) %>% 
+    filter(usuarios > 200)
+glimpse(dados)
+```
+
+Estamos interessados na relação entre quanto as pessoas de diferentes países comentam em questões dos outros. A proporção das pessoas do país que comentou nas questões de outros está medido na variável `comentaram_prop`. 
+
+Considerando essa variável, queremos examinar a relação entre ela e o quão hierárquicas são as relações em um país (`PDI`). Queremos também levar em conta o quanto as pessoas daquele país têm acesso à Internet (`Internet`) e qual o tamanho da base de dados que detectamos daquele país (`usuarios`). 
+
+## Examinando essa relação
+```{r}
+    dados %>%
+        ggplot(aes(x = comentaram_prop, PDI, size = log10(usuarios), color = Internet)) +
+        geom_point(alpha = 0.65) +
+        scale_x_log10() 
+```
+Faça uma visualização que usa os princípios de eficácia no projeto de visualizações para facilitar as comparações que você acha que são as mais importantes para entendermos esse contexto. 
+
+## Outras formas de ver
+
+Em seguida, faça 5 visualizações que usem as mesmas variáveis e também pontos, mas que sejam **menos eficazes** que a que você escolheu acima. 
+COMENTARAM_PROP, INTERNET, USUARIOS, PDI
+```{r}
+    dados %>%
+        ggplot(aes(usuarios, Internet, color = comentaram_prop, size = PDI)) +
+        geom_jitter(alpha = 0.65) +
+        coord_flip() +
+        scale_x_log10() 
+
+
+    dados %>% 
+        ggplot(aes(Internet, PDI, color = usuarios, size = comentaram_prop)) +
+        geom_jitter(alpha = 0.5)
+    
+    dados %>% ggplot(aes(PDI, usuarios, size = Internet, color = comentaram_prop))+ 
+        geom_jitter(alpha = 0.5) +
+        scale_x_log10() +
+        scale_y_log10()
+    
+    dados %>%
+        ggplot(aes(comentaram_prop, usuarios, color = Internet, size = PDI)) +
+        geom_point(alpha = 0.5) +
+        scale_x_log10() +
+        scale_y_log10()
+    
+    dados %>%
+        ggplot(aes(Internet, usuarios, color = PDI, size =comentaram_prop)) +
+        geom_point() +
+        scale_x_log10() +
+        scale_y_log10()
+```
+
+## Bônus
+
+Inclua o continente dos países (`six_regions`) na visualização.
+```{r}
+   geographies %>%
+    group_by(six_regions, four_regions) %>%
+    summarise(four_regions_n = n()) %>%
+    ggplot(aes(x = six_regions," ", color = four_regions, size = four_regions_n) ) +
+    geom_point() + coord_flip()
+```
