@@ -1,0 +1,91 @@
+---
+title: "l2p2"
+author: "Thiago Cunha Montenegro"
+output: 
+    flexdashboard:: flex_dashboard:
+     vertical_layout: scroll   
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(flexdashboard)
+library(tidyverse)
+library(viridis)
+library(hrbrthemes)
+library(plotly)
+library(RColorBrewer)
+
+theme_set(theme_ipsum())
+
+```
+```{r read}
+    respostas = read_csv(here::here("data/enade-ufcg-2017.csv"),
+                     col_types = "cccdccdddc")
+    medias = respostas %>% 
+        filter(categoria != "Outros") %>% 
+        group_by(NOME_CURSO, categoria) %>% 
+        summarise(media = mean(media))
+ 
+   
+    departamentos <- respostas %>%
+        mutate(depto = case_when(
+            NOME_CURSO %in% c('Engenharia (13445)','Engenharia de Produção (79570)', 'Engenharia Mecânica (13442)', 'Engenharia Química (13441)', 'Engenharia (118562)') ~ 'CCT',
+            NOME_CURSO %in% c('Engenharia (13444)', 'Engenharia Civil (13439)','Engenharia de Alimentos (112294)', 'Arquitetura e Urbanismo (1129147)') ~ 'CTRN', NOME_CURSO %in% c('Geografia (Licenciatura) (120777)', 'História (Licenciatura) (13449)', 'Letras-Português (Licenciatura) (1158116)', 'Pedagogia (Licenciatura) (13452)') ~ 'CH',NOME_CURSO %in% c('Geografia (Licenciatura) (13407)','História (Licenciatura) (13405)', 'Letras-Português (Licenciatura) (1160083)','Pedagogia (Licenciatura) (13410)', 'Química (Licenciatura) (1152881)', 'Ciências Biológicas (Licenciatura) (1152882)') ~ 'CFP',NOME_CURSO %in% c('Engenharia (1106561)', 'Engenharia de Produção (1106578)', 'Ciências Sociais (Licenciatura) (1106595)') ~ 'CDSA', NOME_CURSO %in% c('Química (Licenciatura) (99808)', 'Ciências Biológicas (Licenciatura) (99804)') ~ 'CES',
+        NOME_CURSO %in% c('Engenharia Elétrica (13438)', 'Ciência Da Computação (Bacharelado) (13446)') ~ 'CEEI',
+        NOME_CURSO %in% c('Engenharia Florestal (13456)', 'Ciências Biológicas (Licenciatura) (99802)') ~ 'CSTR',
+        NOME_CURSO %in% c('Engenharia Ambiental (112282)') ~ 'CCTA'))
+
+
+    media_por_departamento <- departamentos %>%
+            group_by(depto, categoria) %>%
+            summarise(media_depto = mean(media))
+    
+    glimpse(respostas)
+
+```
+
+```{r}
+    #Analisando o conjunto de dado
+    departamentos %>%
+    filter(categoria == 'Infraestrutura') %>%
+    group_by(depto) %>%
+    summarise(media_depto = mean(media)) %>%
+    ggplot(aes(reorder(depto,media_depto), media_depto)) +
+    geom_jitter(alpha = 0.1, width = .2) + 
+    geom_point(
+        data = filter(media_por_departamento, categoria == 'Infraestrutura'),
+        color = "orange",
+        shape = 15,
+        size = 3
+    ) + coord_flip()
+    
+dados = departamentos %>%
+        group_by(depto, tema) %>%
+        filter(tema == 'Formação cidadã e profissional') %>%
+        summarise(media_depto = mean(media))
+
+dados %>% plot_ly(x = ~media_depto, y = ~ depto, type= "scatter",color=~depto, colors = 'Set1', text = ~paste(
+    'Departamento: ', depto,
+    '<br> Media: ', media_depto)) 
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
