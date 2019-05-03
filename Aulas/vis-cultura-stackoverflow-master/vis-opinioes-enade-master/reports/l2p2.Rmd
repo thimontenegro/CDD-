@@ -11,12 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(flexdashboard)
 library(tidyverse)
 library(viridis)
-library(hrbrthemes)
 library(plotly)
 library(RColorBrewer)
-
-theme_set(theme_ipsum())
-
 ```
 ```{r read}
     respostas = read_csv(here::here("data/enade-ufcg-2017.csv"),
@@ -34,14 +30,12 @@ theme_set(theme_ipsum())
         NOME_CURSO %in% c('Engenharia Elétrica (13438)', 'Ciência Da Computação (Bacharelado) (13446)') ~ 'CEEI',
         NOME_CURSO %in% c('Engenharia Florestal (13456)', 'Ciências Biológicas (Licenciatura) (99802)') ~ 'CSTR',
         NOME_CURSO %in% c('Engenharia Ambiental (112282)') ~ 'CCTA'))
-
-
+    
     media_por_departamento <- departamentos %>%
-            group_by(depto, categoria) %>%
+            group_by(depto, categoria,tema) %>%
             summarise(media_depto = mean(media))
     
     glimpse(respostas)
-
 ```
 
 ```{r}
@@ -58,34 +52,60 @@ theme_set(theme_ipsum())
         shape = 15,
         size = 3
     ) + coord_flip()
-    
-dados = departamentos %>%
+        
+departamentos %>%
         group_by(depto, tema) %>%
         filter(tema == 'Formação cidadã e profissional') %>%
         summarise(media_depto = mean(media))
+```
+```{r}
+dados = departamentos %>%
+        group_by(depto, tema) %>%
+        filter(tema == 'Formação cidadã e profissional') %>%
+        summarise(media_depto = mean(media)) %>%
+        arrange(-media_depto)
 
 dados %>% plot_ly(x = ~media_depto, y = ~ depto, type= "scatter",color=~depto, colors = 'Set1', text = ~paste(
     'Departamento: ', depto,
     '<br> Media: ', media_depto)) 
-
 ```
 
-## R Markdown
+```{r fig.height= 12, fig.width=6}
+media_por_departamento %>%
+        filter(categoria != 'Outros') %>%
+        ggplot(aes(reorder(tema,media_depto), y = media_depto, color = depto)) +
+        geom_jitter(width = .1, alpha = 0.75) +
+        labs(x = '', y = 'Avaliação numa escala de 1 a 6', title = 'Todas as Respostas', subtitle = 'Cada Departamento uma Cor')+
+        facet_grid(reorder(categoria, media_depto) ~ ., scales = 'free_y') +
+        theme(legend.position = 'bottom') +
+        coord_flip() 
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+d = media_por_departamento %>%
+        group_by(depto,categoria) %>%
+        summarise(media_depto = mean(media_depto))
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+d %>% plot_ly(type = 'scatter',
+              y = ~media_depto, 
+              x = ~categoria,
+              text = ~paste("Departamento: ", d$depto,
+                           "<br>Categoria: ", d$categoria,
+                           "<br>Media: ", d$media_depto),
+              hovernfo = 'text', color = ~d$depto, colors = 'Set1', size = 1)
 ```
+##Sera que a avalição dos cursos que possuem maior infraestutura, possuem melhor avaliações no ensino?
 
-## Including Plots
+```{r}
+data = media_por_departamento %>%
+    group_by(depto,categoria) %>%
+    filter(categoria == 'Infraestrutura') %>%
+    summarise(media = mean(media_depto)) 
 
-You can also embed plots, for example:
+ media_por_departamento %>%
+    filter(categoria == "Infraestrutura") %>%
+    ggplot(aes(x = reorder(depto, media_depto), y= media_depto, color = depto)) +
+    geom_point(
+        data = filter(data, categoria == 'Infraestrutura'),
+        color
+    )
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+ ggplotly(depto_infra)
