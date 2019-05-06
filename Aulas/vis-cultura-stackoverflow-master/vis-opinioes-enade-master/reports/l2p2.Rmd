@@ -2,7 +2,9 @@
 title: "l2p2"
 author: "Thiago Cunha Montenegro"
 output: 
-    flexdashboard::flex_dashboard
+    flexdashboard::flex_dashboard:
+            vertical_layout: scroll
+
 ---
 
 ```{r setup, include=FALSE}
@@ -39,30 +41,14 @@ library(RColorBrewer)
     glimpse(respostas)
 ```
 
+-----------------------------------------------------------------------
 
-Page 1
-========================================================
-Column {data-width = 900}
--------------------------------------------------------
-### Chart 1
+### Entendendo a relação de Departamentos por Categoria
 
-```{r}
-media_por_departamento %>%
-        filter(categoria != 'Outros') %>%
-        ggplot(aes(reorder(tema,media_depto), y = media_depto, color = depto)) +
-        geom_jitter(width = .1, alpha = 0.75) +
-        labs(x = '', y = 'Avaliação numa escala de 1 a 6', title = 'Todas as Respostas', subtitle = 'Cada Departamento uma Cor')+
-        facet_grid(reorder(categoria, media_depto) ~ ., scales = 'free_y') +
-        theme(legend.position = 'bottom') +
-        coord_flip() 
-
-```
-
-```{r}
+```{r fig.height=10, fig.width=5}
 d = media_por_departamento %>%
         group_by(depto,categoria) %>%
         summarise(media_depto = mean(media_depto))
-
 d %>% plot_ly(type = 'scatter',
               y = ~media_depto, 
               x = ~categoria,
@@ -72,30 +58,26 @@ d %>% plot_ly(type = 'scatter',
               hovernfo = 'text', color = ~d$depto, colors = 'Set1', size = 1) %>% layout(title = 'Avaliações dos Departamentos entre os Temas',
         yaxis = list(title = 'Média Departamento'),                                             xaxis = list(title = 'Tema de Avaliação'))
 ```
-##Sera que a avalição do departamento que possuem maior infraestutura, possuem melhores dados entre os outros temas de avaliação?
 
-Sabendo que o departamento que possui maior avaliação em infraestrutura é o departamento CES, vamos comparar tal departamento com outros departamentos em relação
-```{r}
-
+-----------------------------------------------------------------------
+### Entendendo qual é a comparação entre o departamento de maior Avaliação CES com os outros departamentos.
+```{r include=FALSE}
 ces = media_por_departamento %>%
                 filter(categoria != 'Outros', depto == 'CES') %>%
                 group_by(tema) %>%
                 summarise(ces = mean(media_depto))
-
 comparacao = media_por_departamento %>% 
     left_join(ces, by = "tema") %>% 
     mutate(diferenca = ces - media_depto, 
            maior_dif = maior - media_depto, 
            menor_dif = menor - media_depto)
-
 ```
 
-```{r fig.height=12, fig.width=6}
+```{r fig.height=12, fig.width=8}
 comparacao %>% 
     filter(categoria != 'Outros') %>%
     ggplot(aes(reorder(tema, diferenca))) +
     geom_col(aes(y = diferenca, fill = diferenca > 0)) +
     facet_grid(reorder(categoria, -diferenca) ~ ., scales = 'free_y') +
     coord_flip()
-
 ```
