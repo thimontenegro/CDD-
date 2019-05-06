@@ -2,8 +2,7 @@
 title: "l2p2"
 author: "Thiago Cunha Montenegro"
 output: 
-    flexdashboard:: flex_dashboard:
-     vertical_layout: scroll   
+    flexdashboard::flex_dashboard
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +13,7 @@ library(viridis)
 library(plotly)
 library(RColorBrewer)
 ```
-```{r read}
+```{r read, include=FALSE}
     respostas = read_csv(here::here("data/enade-ufcg-2017.csv"),
                      col_types = "cccdccdddc")
     medias = respostas %>% 
@@ -33,44 +32,21 @@ library(RColorBrewer)
     
     media_por_departamento <- departamentos %>%
             group_by(depto, categoria,tema) %>%
-            summarise(media_depto = mean(media))
+            summarise(media_depto = mean(media),
+                      maior = max(media),
+                      menor = min(media))
     
     glimpse(respostas)
 ```
 
-```{r}
-    #Analisando o conjunto de dado
-    departamentos %>%
-    filter(categoria == 'Infraestrutura') %>%
-    group_by(depto) %>%
-    summarise(media_depto = mean(media)) %>%
-    ggplot(aes(reorder(depto,media_depto), media_depto)) +
-    geom_jitter(alpha = 0.1, width = .2) + 
-    geom_point(
-        data = filter(media_por_departamento, categoria == 'Infraestrutura'),
-        color = "orange",
-        shape = 15,
-        size = 3
-    ) + coord_flip()
-        
-departamentos %>%
-        group_by(depto, tema) %>%
-        filter(tema == 'Formação cidadã e profissional') %>%
-        summarise(media_depto = mean(media))
-```
-```{r}
-dados = departamentos %>%
-        group_by(depto, tema) %>%
-        filter(tema == 'Formação cidadã e profissional') %>%
-        summarise(media_depto = mean(media)) %>%
-        arrange(-media_depto)
 
-dados %>% plot_ly(x = ~media_depto, y = ~ depto, type= "scatter",color=~depto, colors = 'Set1', text = ~paste(
-    'Departamento: ', depto,
-    '<br> Media: ', media_depto)) 
-```
+Page 1
+========================================================
+Column {data-width = 900}
+-------------------------------------------------------
+### Chart 1
 
-```{r fig.height= 12, fig.width=6}
+```{r}
 media_por_departamento %>%
         filter(categoria != 'Outros') %>%
         ggplot(aes(reorder(tema,media_depto), y = media_depto, color = depto)) +
@@ -80,6 +56,9 @@ media_por_departamento %>%
         theme(legend.position = 'bottom') +
         coord_flip() 
 
+```
+
+```{r}
 d = media_por_departamento %>%
         group_by(depto,categoria) %>%
         summarise(media_depto = mean(media_depto))
@@ -90,22 +69,33 @@ d %>% plot_ly(type = 'scatter',
               text = ~paste("Departamento: ", d$depto,
                            "<br>Categoria: ", d$categoria,
                            "<br>Media: ", d$media_depto),
-              hovernfo = 'text', color = ~d$depto, colors = 'Set1', size = 1)
+              hovernfo = 'text', color = ~d$depto, colors = 'Set1', size = 1) %>% layout(title = 'Avaliações dos Departamentos entre os Temas',
+        yaxis = list(title = 'Média Departamento'),                                             xaxis = list(title = 'Tema de Avaliação'))
 ```
-##Sera que a avalição dos cursos que possuem maior infraestutura, possuem melhor avaliações no ensino?
+##Sera que a avalição do departamento que possuem maior infraestutura, possuem melhores dados entre os outros temas de avaliação?
 
+Sabendo que o departamento que possui maior avaliação em infraestrutura é o departamento CES, vamos comparar tal departamento com outros departamentos em relação
 ```{r}
-data = media_por_departamento %>%
-    group_by(depto,categoria) %>%
-    filter(categoria == 'Infraestrutura') %>%
-    summarise(media = mean(media_depto)) 
 
- media_por_departamento %>%
-    filter(categoria == "Infraestrutura") %>%
-    ggplot(aes(x = reorder(depto, media_depto), y= media_depto, color = depto)) +
-    geom_point(
-        data = filter(data, categoria == 'Infraestrutura'),
-        color
-    )
+ces = media_por_departamento %>%
+                filter(categoria != 'Outros', depto == 'CES') %>%
+                group_by(tema) %>%
+                summarise(ces = mean(media_depto))
 
- ggplotly(depto_infra)
+comparacao = media_por_departamento %>% 
+    left_join(ces, by = "tema") %>% 
+    mutate(diferenca = ces - media_depto, 
+           maior_dif = maior - media_depto, 
+           menor_dif = menor - media_depto)
+
+```
+
+```{r fig.height=12, fig.width=6}
+comparacao %>% 
+    filter(categoria != 'Outros') %>%
+    ggplot(aes(reorder(tema, diferenca))) +
+    geom_col(aes(y = diferenca, fill = diferenca > 0)) +
+    facet_grid(reorder(categoria, -diferenca) ~ ., scales = 'free_y') +
+    coord_flip()
+
+```
