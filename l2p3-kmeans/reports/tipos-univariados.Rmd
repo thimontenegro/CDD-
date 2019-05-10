@@ -1,0 +1,159 @@
+---
+title: "Tipos de filme de FULANO(A)"
+output:
+    html_document:
+    df_print: paged
+theme: sandstone
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(here)
+library(cluster)
+library(plotly)
+library(ggdendro)
+library(ggbeeswarm)
+library(RColorBrewer)
+
+source(here::here("code/lib.R"))
+theme_set(theme_report())
+
+knitr::opts_chunk$set(tidy = FALSE,
+                      fig.width = 6,
+                      fig.height = 5,
+                      echo = TRUE)
+
+paleta = c("#404E4D",
+           "#92DCE5",
+           "#938BA1",
+           "#2D3142",
+           "#F4743B")
+```
+
+```{r}
+## ANTES DE USAR
+# Para criar data/movies.csv
+import_data("leonardo_di_caprio") # ou com o ator/atriz que você escolher
+```
+
+
+```{r read}
+filmes = read_imported_data()
+```
+
+## Descrição
+
+```{r}
+filmes %>% 
+    ggplot(aes(x = ano, y = bilheteria)) + 
+    geom_point(size = 4, color = paleta[1]) 
+```
+
+
+
+```{r}
+filmes %>% 
+    ggplot(aes(x = bilheteria)) + 
+    geom_histogram(binwidth = 15, fill = paleta[2], color = "black") + 
+    geom_rug(size = .5) 
+```
+
+```{r}
+filmes %>% 
+    ggplot(aes(x = avaliacao)) + 
+    geom_histogram(binwidth = 10, boundary = 0, fill = paleta[3], color = "black") + 
+    geom_rug(size = .5) 
+```
+
+## Estrutura de grupos?
+
+```{r}
+bilheteria = filmes %>% 
+    ggplot(aes(x = "", y = bilheteria, label = filme)) + 
+    geom_quasirandom(width = .05, alpha = .3, size = 3) + 
+    labs(title = 'Avaliação da bilheteria dos filmes de Leonardo di Caprio',
+        x = "",
+         y='Bilheteria')
+ggplotly(bilheteria)
+
+```
+O gráfico acima mostra os filmes que possuem maior bilheteria de Leonardo di Caprio, onde o filme é Inception de 2010.
+```{r}
+sucesso_de_publico = filmes %>%
+                ggplot(aes(x = '', y = avaliacao, label = filme)) +
+                geom_quasirandom(width = 0.05, alpha = 0.3, size = 3) +
+                labs(title = 'Avaliação de sucesso de filmes de Leonardo di Caprio',
+                     x = '',
+                     y= 'Avaliação do RT')
+ggplotly(sucesso_de_publico)
+```
+O filme de maior avaliação entre o público e a crítica é Catch Me If You Can, dirigido por Steven Spielberg, no ano de 2002, curiosamente o filme com a maior avaliação entre os demais é um dos filmes mais antigos dentro da nossa conjuntura de dados de Leonardo di Caprio.
+
+
+
+
+
+```{r}
+get_grupos <- function(agrupamento, num_grupos){
+    agrupamento %>% 
+        cutree(num_grupos) %>% 
+        as.data.frame() %>% 
+        mutate(label = rownames(.)) %>% 
+        gather(key =  "k", value = "grupo", -label) %>% 
+        mutate(grupo = as.character(grupo))
+}
+
+atribuicoes = get_grupos(agrupamento_h, num_grupos = 1:6)
+
+atribuicoes = atribuicoes %>% 
+    left_join(filmes, by = c("label" = "filme"))
+
+atribuicoes %>% 
+    ggplot(aes(x = "Filmes", y = avaliacao, colour = grupo)) + 
+    geom_jitter(width = .02, height = 0, size = 1.6, alpha = .6) + 
+    facet_wrap(~ paste(k, " grupos")) + 
+    scale_color_brewer(palette = "Dark2")
+
+```
+
+```{r}
+k_escolhido = 4
+
+a = atribuicoes %>% 
+    filter(k == k_escolhido) %>% 
+    ggplot(aes(x = reorder(label, avaliacao), y = avaliacao, colour = grupo)) + 
+    geom_jitter(width = .02, height = 0, size = 3, alpha = .6) + 
+    facet_wrap(~ paste(k, " grupos")) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(x = "", y = "Avaliação RT") + 
+    coord_flip() 
+
+ggplotly(a)
+
+
+bilheteria = atribuicoes %>%
+    filter(k == 3) %>%
+    ggplot(aes(x = reorder(label,bilheteria), y = bilheteria, colour = grupo, group = grupo)) +
+    geom_jitter(width = 0.02, height= 0, size = 3, alpha = 0.6)+
+    geom_line(aes(y=lower), linetype = 'dotted') +
+    geom_line(aes(y=upper), linetype = 'dotted') +
+    scale_color_manual(name= 'Groups', values=c('Red','blue')) +
+    guides(colour = guide_legend(override.aes = list(linetype = 1)))
+
+```
+
+```{r}
+filmes %>%
+    ggplot(aes_string(x='bilheteria',y = 'avaliacao', color = 'Set1')) +
+    geom_point(size = 0.25) +
+    guides(color = guide_legend(override.aes = list(size = 2))) +
+     theme_light(base_size=20) +
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        legend.direction = "horizontal", 
+        legend.position = "bottom",
+        legend.box = "horizontal")
+```
+
+
+
