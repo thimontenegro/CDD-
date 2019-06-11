@@ -1,0 +1,116 @@
+---
+title: "Regressão"
+author: "Thiago Montenegro"
+date: "11 de junho de 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(openintro)
+library(tidyverse)
+library(ggbeeswarm)
+library(modelr)
+library(broom)
+theme_set(theme_bw())
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(openintro)
+dados = marioKart %>%
+        filter(ID != '110439174663', ID != '130335427560') 
+
+```
+
+```{r}
+dispersao = dados %>%
+                  ggplot(aes(totalPr, nBids)) +
+                  geom_jitter(size = 0.9)
+
+dispersao
+```
+```{r}
+dispersao_lm = dados %>%
+                ggplot(aes(totalPr, nBids)) +
+                geom_point(size = 0.9) +
+                geom_smooth(method = 'lm', se = FALSE)
+dispersao_lm
+```
+```{r}
+modelo = lm(totalPr ~ nBids, data = marioKart)
+
+summary(modelo)
+confint(modelo)
+
+tidy(mod)
+glance(mod) # depois falaremos desse
+
+```
+```{r}
+var.y2 <- sum((marioKart$totalPr - mean(marioKart$nBids))^2)
+# variância dos resíduos do modelo
+var.residuals <- sum(mod$residuals^2)
+
+#calculando e conferindo o R^2
+(var.y2 - var.residuals)/var.y2
+rsquare(modelo, data = marioKart)
+
+glance(modelo)
+```
+
+
+
+```{r}
+rmse(modelo, marioKart)
+mae(modelo, marioKart)
+qae(modelo, marioKart)
+```
+
+```{r}
+dados = dados %>%
+        mutate(aumento = totalPr - startPr)
+
+dados %>%
+      ggplot(aes(aumento, nBids)) +
+      geom_point() +
+      geom_smooth(method = 'lm', se = FALSE)
+
+modelo = lm(aumento ~ nBids, data = dados)
+summary(modelo)
+confint(modelo)
+
+dados %>%
+    add_predictions(model = modelo) %>%
+    ggplot(aes(x = nBids)) +
+    geom_point(aes(y = aumento), alpha = .3) +
+    geom_line(aes(y = pred), color = 'red')
+dados %>%
+    add_residuals(model = modelo) %>%
+    ggplot(aes(x = nBids)) +
+    geom_point(aes(y = resid), alpha = .3) +
+    geom_hline(yintercept = 0)
+
+
+```
+```{r}
+modelo = lm(dados$totalPr ~ dados$stockPhoto)
+summary(modelo)
+confint(modelo)
+modelo %>%
+  tidy(conf.int = T)
+tidy(modelo,
+    conf.int = TRUE,
+    conf.level = .95)
+
+modelo %>% glance()
+
+dados %>%
+    ggplot(aes(totalPr, stockPhoto, color = stockPhoto)) +
+    geom_point()
+
+```
+
+
+
+
+
+
